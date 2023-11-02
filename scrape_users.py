@@ -5,7 +5,10 @@ from bs4 import BeautifulSoup
 import pandas as pd
 
 BASE_URL = 'https://www.tiktok.com'
-
+# type chrome://version/ into address bar to locate your profile path and paste into line 10 bellow
+# Best practice is to create a new profile for running the script
+CHROME_PROFILE = r"C:\Users\user_folder\AppData\Local\Google\Chrome\User Data\Profile 2"
+# make sure there is a 'r' before the path string above
 
 def scrape_users(driver, search_strings):
     users = []
@@ -55,7 +58,8 @@ def scrape_users(driver, search_strings):
     users_df = pd.DataFrame(users, columns=["Keyword", "Username", "Followers", "Page", "Nickname",
                                             "Description"])
 
-    # users_df['Followers'].astype(str).replace({'K': '*1e3', 'M': '*1e6'}, regex=True).map(pd.eval).astype(int)
+    # convert followers to int type
+    # users_df['Followers'] = users_df['Followers'].replace({'K': '*1e3', 'M': '*1e6'}, regex=True).map(pd.eval).astype(int)
     return users_df
 
 
@@ -69,10 +73,10 @@ if __name__ == "__main__":
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    # type chrome://version/ into address bar to locate your profile path.
-    # Best practice is to create a new profile for running the script
-    options.add_argument("user-data-dir=C:\\Users\\[REPLACE WITH YOUR USERS FILE]\\AppData\\Local\\Google\\Chrome\\User Data")
-    options.add_argument("profile-directory=Profile 1")
+    chrome_list = CHROME_PROFILE.split("\\")
+    user_data_dir = '\\'.join(chrome_list[:-1])
+    options.add_argument(f"user-data-dir={user_data_dir}")
+    options.add_argument(f"profile-directory={chrome_list[-1]}")
     driver = webdriver.Chrome(options=options)
 
     users = scrape_users(driver, sys.argv[1:])

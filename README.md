@@ -14,11 +14,11 @@ Install requirements with:
 
 2. Navigate to www.tiktok.com and log into an account. Again it is good to use a fresh one.
 
-3. In chrome navigate to chrome://version/ and take a note of what is shown next to Profile Path. It should be something like:
+3. In chrome navigate to chrome://version/ and copy your Profile Path. If your on windows it should look something like:
 
 ```C:\Users\[Your_user_folder]\AppData\Local\Google\Chrome\User Data\Profile 1```
 
-4. Open the script and edit lines 74 and 75 to contain the path to your chrome profile.
+4. Open the script and paste your path into the CHROME_PROFILE variable on line 10.
 
 ## Running the script
 
@@ -34,6 +34,7 @@ Once completed you will see a csv file generated in the same directory as the sc
 
 ### Future Updates
 
-- Add batch scraping from file.
-- Clean data in follower count output to be numerical format.
 - This script will be augmented by two additional scripts to scrape video and viewer data.
+- Add batch scraping from file.
+- Improve performance of the script
+- Clean data in follower count output to be numerical format.
