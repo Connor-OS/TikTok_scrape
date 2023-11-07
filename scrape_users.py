@@ -3,6 +3,7 @@ from time import sleep
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import pandas as pd
+import os
 
 BASE_URL = 'https://www.tiktok.com'
 # type chrome://version/ into address bar to locate your profile path and paste into line 10 bellow
@@ -30,36 +31,36 @@ def scrape_users(driver, search_strings):
         # extract user info
         users_soup = soup.find_all("a", {"data-e2e": "search-user-info-container"})
         for u in users_soup:
+            user = dict()
             # search term and username
-            user = [search_string, u['href'].strip("/@")]
+            user["Keyword"] = search_string
+            user["Username"] = u['href'].strip("/@")
             # follow count
             if followers := u.find("strong", {"data-e2e": "search-follow-count"}):
                 pass
+            elif followers := u.find("span", {"data-e2e": "search-follow-count"}):
+                pass
             else:
-                followers = u.find("span", {"data-e2e": "search-follow-count"})
+                continue
             followers = followers.get_text()
             followers = followers.split()[0]
-            user.append(followers)
+            followers = eval(followers.replace('K', '*1e3').replace('M', '*1e6'))
+            user["Followers"] = int(followers)
             # link
-            user.append(f"{BASE_URL}{u['href']}")
+            user["Page"] = f"{BASE_URL}{u['href']}"
             # nickname
             if nickname := u.find("p", {"data-e2e": "search-user-nickname"}):
-                user.append(nickname.get_text())
-            else:
-                user.append(None)
+                user["Nickname"] = nickname.get_text()
             # description
-            if desc := u.find("p", {"data-e2e": "search-user-desc"}):
-                user.append(desc.get_text())
-            else:
-                user.append(None)
+            if description := u.find("p", {"data-e2e": "search-user-desc"}):
+                user["Description"] = description.get_text()
 
             users.append(user)
+        print(f"found {len(users)} results for {search_string}")
 
-    users_df = pd.DataFrame(users, columns=["Keyword", "Username", "Followers", "Page", "Nickname",
-                                            "Description"])
-
-    # convert followers to int type
-    # users_df['Followers'] = users_df['Followers'].replace({'K': '*1e3', 'M': '*1e6'}, regex=True).map(pd.eval).astype(int)
+    users_df = pd.DataFrame(users)
+    users_df = users_df.set_index("Keyword")
+    users_df = users_df.sort_values(["Keyword", "Followers"], ascending=False)
     return users_df
 
 
@@ -73,8 +74,8 @@ if __name__ == "__main__":
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    chrome_list = CHROME_PROFILE.split("/")
-    user_data_dir = '/'.join(chrome_list[:-1])
+    chrome_list = CHROME_PROFILE.split(os.sep)
+    user_data_dir = os.sep.join(chrome_list[:-1])
     options.add_argument(f"user-data-dir={user_data_dir}")
     options.add_argument(f"profile-directory={chrome_list[-1]}")
     driver = webdriver.Chrome(options=options)
