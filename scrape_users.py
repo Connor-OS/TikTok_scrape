@@ -8,7 +8,7 @@ import os
 BASE_URL = 'https://www.tiktok.com'
 # type chrome://version/ into address bar to locate your profile path and paste into line 10 bellow
 # Best practice is to create a new profile for running the script
-CHROME_PROFILE = r"C:\Users\user_folder\AppData\Local\Google\Chrome\User Data\Profile 2"
+CHROME_PROFILE = r"C:\Users\OShaughnessyC\AppData\Local\Google\Chrome\User Data\Profile 2"
 # make sure there is a 'r' before the path string above
 
 def scrape_users(driver, search_strings):
@@ -30,6 +30,7 @@ def scrape_users(driver, search_strings):
 
         # extract user info
         users_soup = soup.find_all("a", {"data-e2e": "search-user-info-container"})
+        print(f"found {len(users_soup)} results for {search_string}")
         for u in users_soup:
             user = dict()
             # search term and username
@@ -56,12 +57,61 @@ def scrape_users(driver, search_strings):
                 user["Description"] = description.get_text()
 
             users.append(user)
-        print(f"found {len(users)} results for {search_string}")
 
     users_df = pd.DataFrame(users)
     users_df = users_df.set_index("Keyword")
     users_df = users_df.sort_values(["Keyword", "Followers"], ascending=False)
     return users_df
+
+
+def scrape_video(driver, search_strings):
+    #TODO: Refactor repeated code from both functions
+    videos = []
+    for search_string in search_strings:
+        print(f"Searching for: {search_string}, may take a few seconds...")
+        # request page from tiktok
+        search_url = f"{BASE_URL}/search?q={search_string}"
+        driver.get(search_url)
+        sleep(5)  # wait for page to load up 5s seems to be long enough
+
+        # scroll page to account for pagination and get more results
+        for _ in range(10):
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            sleep(0.5)
+        # pull page HTML
+        page_source = driver.page_source
+        soup = BeautifulSoup(page_source, 'html.parser')
+
+        # extract user info
+        videos_soup = soup.find_all("div", {"data-e2e": "search-card-desc"})
+        videos_links = soup.find_all("div", {"data-e2e": "search_top-item"})
+        print(f"found {len(videos_soup)} results for {search_string}")
+        for v, l in zip(videos_soup, videos_links):
+            video = dict()
+            # search term and username
+            video["Keyword"] = search_string
+            video["Username"] = v.find("a", {"data-e2e": "search-card-user-link"})['href'].strip("/@")
+            # like count
+            if likes := v.find("div", {"data-e2e": "search-card-like-container"}):
+                pass
+            else:
+                continue
+            likes = likes.get_text()
+            likes = likes.split()[0]
+            likes = eval(likes.replace('K', '*1e3').replace('M', '*1e6'))
+            video["Likes"] = int(likes)
+            # link
+            video["URL"] = l.find("a")["href"]
+            # description
+            if description := v.find("p", {"data-e2e": "search-card-video-caption"}):
+                video["Description"] = description.get_text()
+
+            videos.append(video)
+
+    videos_df = pd.DataFrame(videos)
+    videos_df = videos_df.set_index("Keyword")
+    videos_df = videos_df.sort_values(["Keyword", "Likes"], ascending=False)
+    return videos_df
 
 
 if __name__ == "__main__":
@@ -80,5 +130,8 @@ if __name__ == "__main__":
     options.add_argument(f"profile-directory={chrome_list[-1]}")
     driver = webdriver.Chrome(options=options)
 
-    users = scrape_users(driver, sys.argv[1:])
-    users.to_csv(f"user_data_{'_'.join(sys.argv[1:])}.csv")
+    if sys.argv[1] == "-v":
+        data = scrape_video(driver, sys.argv[2:])
+    else:
+        data = scrape_users(driver, sys.argv[1:])
+    data.to_csv(f"user_data_{'_'.join(sys.argv[1:])}.csv")

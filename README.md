@@ -9,7 +9,7 @@ Install requirements with:
 
 ### Setup
 
-1. (Optional) Create a new profile in Chrome only for running this script. This keeps things separate from your normal browsing.
+1. Create a new profile in Chrome only for running this script. This keeps things separate from your normal browsing.
  It is not necessary to link it to a Google account.
 
 2. Navigate to www.tiktok.com and log into an account. Again it is good to use a fresh one.
@@ -26,7 +26,13 @@ To run the script use:
 
 ```python scrape_users.py keyword1 keyword2```
 
-where keyword1 and 2 are keywords you wish to scrape TiKTok for. You must provide at least 1 keyword, but you can add as many as you like. The script should take only a few seconds per keyword to run.
+where keyword1 and 2 are keywords you wish to scrape TiKTok users for. You must provide at least 1 keyword, but you can add as many as you like. The script should take only a few seconds per keyword to run.
+
+if you instead provide the optional flag "-v" to the script like:
+
+```python scrape_users.py -v keyword1 keyword2```
+
+you will scrape for to video links instead of user profiles.
 
 Once completed you will see a csv file generated in the same directory as the script with the acquired data.
 
