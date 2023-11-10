@@ -148,7 +148,7 @@ if __name__ == "__main__":
     print(f"Found these keywords from your input: {' '.join(sys.argv[1:])}")
 
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
+    # options.add_argument("--headless")
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     chrome_list = CHROME_PROFILE.split(os.sep)
     user_data_dir = os.sep.join(chrome_list[:-1])
