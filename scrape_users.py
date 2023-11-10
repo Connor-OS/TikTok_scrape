@@ -16,6 +16,7 @@ def scrape_users(driver, search_strings):
     for search_string in search_strings:
         print(f"Searching for: {search_string}, may take a few seconds...")
         # request page from tiktok
+        driver.get(BASE_URL)
         search_url = f"{BASE_URL}/search/user?q={search_string}"
         print(f"Scraping from: {search_url}")
         driver.get(search_url)
@@ -29,8 +30,8 @@ def scrape_users(driver, search_strings):
         soup = BeautifulSoup(page_source, 'html.parser')
 
         if "Drag the slider to fit the puzzle" in page_source:
-            print("Warning: TikTok requested bot check - exiting")
-            return
+            print("Warning: TikTok requested bot check - can't gather results")
+            continue
 
         # extract user info
         users_soup = soup.find_all("a", {"data-e2e": "search-user-info-container"})
@@ -62,6 +63,9 @@ def scrape_users(driver, search_strings):
 
             users.append(user)
 
+    if len(users) == 0:
+        return
+
     users_df = pd.DataFrame(users)
     users_df = users_df.set_index("Keyword")
     users_df = users_df.sort_values(["Keyword", "Followers"], ascending=False)
@@ -75,7 +79,7 @@ def scrape_video(driver, search_strings):
         # print(f"Searching for: {search_string}, may take a few seconds...")
         # request page from tiktok
         search_url = f"{BASE_URL}/search?q={search_string}"
-        print(f"scraping from: {search_url}")
+        print(f"Scraping from: {search_url}")
         driver.get(search_url)
 
         # scroll page to account for pagination and get more results
@@ -87,8 +91,8 @@ def scrape_video(driver, search_strings):
         soup = BeautifulSoup(page_source, 'html.parser')
 
         if "Drag the slider to fit the puzzle" in page_source:
-            print("Warning: TikTok requested bot check - exiting")
-            return
+            print("Warning: TikTok requested bot check - can't gather results")
+            continue
 
         # extract user info
         videos_soup = soup.find_all("div", {"data-e2e": "search-card-desc"})
@@ -126,6 +130,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Provide keywords to scrape:"
               "for example: python scrape_users.py keyword1 keyword2")
+    print(f"Using chrome profile: {CHROME_PROFILE}")
 
     print(f"Found these keywords from your input: {' '.join(sys.argv[1:])}")
 
