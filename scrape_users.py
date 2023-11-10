@@ -17,20 +17,24 @@ def scrape_users(driver, search_strings):
         print(f"Searching for: {search_string}, may take a few seconds...")
         # request page from tiktok
         search_url = f"{BASE_URL}/search/user?q={search_string}"
+        print(f"Scraping from: {search_url}")
         driver.get(search_url)
-        sleep(5)  # wait for page to load up 5s seems to be long enough
 
         # scroll page to account for pagination and get more results
         for _ in range(10):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            sleep(0.5)
+            sleep(1)
         # pull page HTML
         page_source = driver.page_source
         soup = BeautifulSoup(page_source, 'html.parser')
 
+        if "Drag the slider to fit the puzzle" in page_source:
+            print("Warning: TikTok requested bot check - exiting")
+            return
+
         # extract user info
         users_soup = soup.find_all("a", {"data-e2e": "search-user-info-container"})
-        print(f"found {len(users_soup)} results for {search_string}")
+        print(f"Found {len(users_soup)} results for {search_string}")
         for u in users_soup:
             user = dict()
             # search term and username
@@ -68,24 +72,28 @@ def scrape_video(driver, search_strings):
     #TODO: Refactor repeated code from both functions
     videos = []
     for search_string in search_strings:
-        print(f"Searching for: {search_string}, may take a few seconds...")
+        # print(f"Searching for: {search_string}, may take a few seconds...")
         # request page from tiktok
         search_url = f"{BASE_URL}/search?q={search_string}"
+        print(f"scraping from: {search_url}")
         driver.get(search_url)
-        sleep(5)  # wait for page to load up 5s seems to be long enough
 
         # scroll page to account for pagination and get more results
         for _ in range(10):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            sleep(0.5)
+            sleep(1)
         # pull page HTML
         page_source = driver.page_source
         soup = BeautifulSoup(page_source, 'html.parser')
 
+        if "Drag the slider to fit the puzzle" in page_source:
+            print("Warning: TikTok requested bot check - exiting")
+            return
+
         # extract user info
         videos_soup = soup.find_all("div", {"data-e2e": "search-card-desc"})
         videos_links = soup.find_all("div", {"data-e2e": "search_top-item"})
-        print(f"found {len(videos_soup)} results for {search_string}")
+        print(f"Found {len(videos_soup)} results for {search_string}")
         for v, l in zip(videos_soup, videos_links):
             video = dict()
             # search term and username
@@ -116,10 +124,10 @@ def scrape_video(driver, search_strings):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("provide keywords to scrape:"
+        print("Provide keywords to scrape:"
               "for example: python scrape_users.py keyword1 keyword2")
 
-    print(f"found these keywords from your input: {' '.join(sys.argv[1:])}")
+    print(f"Found these keywords from your input: {' '.join(sys.argv[1:])}")
 
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
@@ -134,4 +142,9 @@ if __name__ == "__main__":
         data = scrape_video(driver, sys.argv[2:])
     else:
         data = scrape_users(driver, sys.argv[1:])
-    data.to_csv(f"user_data_{'_'.join(sys.argv[1:])}.csv")
+
+    # write data to csv
+    if data is not None:
+        data.to_csv(f"user_data_{'_'.join(sys.argv[1:])}.csv")
+    else:
+        print("Unsuccessful scrape")
