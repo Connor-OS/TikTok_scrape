@@ -1,3 +1,4 @@
+import json
 import sys
 from time import sleep
 from selenium import webdriver
@@ -8,7 +9,8 @@ import os
 BASE_URL = 'https://www.tiktok.com'
 # type chrome://version/ into address bar to locate your profile path and paste into line 10 bellow
 # Best practice is to create a new profile for running the script
-CHROME_PROFILE = r"C:\Users\OShaughnessyC\AppData\Local\Google\Chrome\User Data\Profile 2"
+CHROME_PROFILE = r"[Paste you chrome profile here]"
+USE_COOKIES = False
 # make sure there is a 'r' before the path string above
 
 def scrape_users(driver, search_strings):
@@ -16,11 +18,11 @@ def scrape_users(driver, search_strings):
     for search_string in search_strings:
         print(f"Searching for: {search_string}, may take a few seconds...")
         # request page from tiktok
-        driver.get(BASE_URL)
         search_url = f"{BASE_URL}/search/user?q={search_string}"
         print(f"Scraping from: {search_url}")
         driver.get(search_url)
-
+        if USE_COOKIES:
+            driver = load_cookies(driver)
         # scroll page to account for pagination and get more results
         for _ in range(10):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -81,7 +83,8 @@ def scrape_video(driver, search_strings):
         search_url = f"{BASE_URL}/search?q={search_string}"
         print(f"Scraping from: {search_url}")
         driver.get(search_url)
-
+        if USE_COOKIES:
+            driver = load_cookies(driver)
         # scroll page to account for pagination and get more results
         for _ in range(10):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -126,6 +129,16 @@ def scrape_video(driver, search_strings):
     return videos_df
 
 
+def load_cookies(driver):
+    with open("cookies.txt", 'r') as file_path:
+        cookies_list = json.loads(file_path.read())
+    for cookie in cookies_list:
+        cookie.pop('domain', None)
+        driver.add_cookie(cookie)
+    driver.refresh()
+    return driver
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Provide keywords to scrape:"
@@ -139,8 +152,8 @@ if __name__ == "__main__":
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     chrome_list = CHROME_PROFILE.split(os.sep)
     user_data_dir = os.sep.join(chrome_list[:-1])
-    options.add_argument(f"user-data-dir={user_data_dir}")
-    options.add_argument(f"profile-directory={chrome_list[-1]}")
+    options.add_argument(f"--user-data-dir={user_data_dir}")
+    options.add_argument(f"--profile-directory={chrome_list[-1]}")
     driver = webdriver.Chrome(options=options)
 
     if sys.argv[1] == "-v":
