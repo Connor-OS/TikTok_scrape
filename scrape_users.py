@@ -3,14 +3,18 @@ import sys
 from time import sleep
 from selenium import webdriver
 from bs4 import BeautifulSoup
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
 import os
 
 BASE_URL = 'https://www.tiktok.com'
 # type chrome://version/ into address bar to locate your profile path and paste into line 10 bellow
 # Best practice is to create a new profile for running the script
-CHROME_PROFILE = r"[Paste you chrome profile here]"
-USE_COOKIES = False
+CHROME_PROFILE = r"/home/connor/.config/google-chrome/Profile 1"
 # make sure there is a 'r' before the path string above
 
 def scrape_users(driver, search_strings):
@@ -21,8 +25,14 @@ def scrape_users(driver, search_strings):
         search_url = f"{BASE_URL}/search/user?q={search_string}"
         print(f"Scraping from: {search_url}")
         driver.get(search_url)
-        if USE_COOKIES:
-            driver = load_cookies(driver)
+        
+        WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.ID, "app"))
+)
+
+        if "Log in" in driver.page_source:
+            driver = request_user_login(driver)
+
         # scroll page to account for pagination and get more results
         for _ in range(10):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -83,8 +93,14 @@ def scrape_video(driver, search_strings):
         search_url = f"{BASE_URL}/search?q={search_string}"
         print(f"Scraping from: {search_url}")
         driver.get(search_url)
-        if USE_COOKIES:
-            driver = load_cookies(driver)
+
+        WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.ID, "app"))
+)
+
+        if "Log in" in driver.page_source:
+            driver = request_user_login(driver)
+
         # scroll page to account for pagination and get more results
         for _ in range(10):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -128,14 +144,12 @@ def scrape_video(driver, search_strings):
     videos_df = videos_df.sort_values(["Keyword", "Likes"], ascending=False)
     return videos_df
 
-
-def load_cookies(driver):
-    with open("cookies.txt", 'r') as file_path:
-        cookies_list = json.loads(file_path.read())
-    for cookie in cookies_list:
-        cookie.pop('domain', None)
-        driver.add_cookie(cookie)
-    driver.refresh()
+def request_user_login(driver):
+    print("please login")
+    WebDriverWait(driver, 60).until(
+    EC.presence_of_element_located((By.CSS_SELECTOR, '[data-e2e="profile-icon"]'))
+)
+    driver.minimize_window()
     return driver
 
 
@@ -154,7 +168,7 @@ if __name__ == "__main__":
     user_data_dir = os.sep.join(chrome_list[:-1])
     options.add_argument(f"--user-data-dir={user_data_dir}")
     options.add_argument(f"--profile-directory={chrome_list[-1]}")
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     if sys.argv[1] == "-v":
         data = scrape_video(driver, sys.argv[2:])
