@@ -18,7 +18,7 @@ Install requirements with:
 
 ```C:\Users\[Your_user_folder]\AppData\Local\Google\Chrome\User Data\Profile 1```
 
-4. Open the script and paste your path into the CHROME_PROFILE variable on line 10.
+4. Open the script and paste your path into the CHROME_PROFILE variable in utils.py.
 
 ## Running the script
 
@@ -53,7 +53,7 @@ Included in the repo are a few examples these were gereted by running the script
 
 ### Future Updates
 
-- This script will be augmented by two additional scripts to scrape video and viewer data.
-- Add batch scraping from file.
-- Improve performance of the script
-- Clean data in follower count output to be numerical format.
+- [x] This script will be augmented by two additional scripts to scrape video and viewer data.
+- [ ] Add batch scraping from file.
+- [x] Improve performance of the script
+- [x] Clean data in follower count output to be numerical format.
