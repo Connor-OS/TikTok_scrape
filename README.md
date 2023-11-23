@@ -37,6 +37,19 @@ you will scrape for to video links instead of user profiles.
 Once completed you will see a csv file generated in the same directory as the script with the acquired data.
 
 
+## Examples
+
+Included in the repo are a few examples these were gereted by running the scripts in the following ways:
+
+
+`python scrape_users.py "ai"`
+
+`python scrape_users.py -v "ai"`
+
+`python scrape_video.py "ai.explains.ai"`
+
+`python scrape_comments "ai.explains.ai/video/7155161931798695174"`
+
 
 ### Future Updates
 
