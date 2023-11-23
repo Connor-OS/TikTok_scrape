@@ -1,50 +1,20 @@
-import json
 import sys
-from time import sleep
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
 import os
+from utils import get_page_source, CHROME_PROFILE, BASE_URL
 
-BASE_URL = 'https://www.tiktok.com'
-# type chrome://version/ into address bar to locate your profile path and paste into line 10 bellow
-# Best practice is to create a new profile for running the script
-CHROME_PROFILE = r"/home/connor/.config/google-chrome/Profile 1"
-# make sure there is a 'r' before the path string above
 
 def scrape_users(driver, search_strings):
     users = []
     for search_string in search_strings:
         print(f"Searching for: {search_string}, may take a few seconds...")
-        # request page from tiktok
         search_url = f"{BASE_URL}/search/user?q={search_string}"
-        print(f"Scraping from: {search_url}")
-        driver.get(search_url)
-        
-        WebDriverWait(driver, 10).until(
-    EC.presence_of_element_located((By.ID, "app"))
-)
-
-        if "Log in" in driver.page_source:
-            driver = request_user_login(driver)
-
-        # scroll page to account for pagination and get more results
-        for _ in range(10):
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            sleep(1)
-        # pull page HTML
-        page_source = driver.page_source
+        driver, page_source = get_page_source(driver, search_url)
         soup = BeautifulSoup(page_source, 'html.parser')
-
-        if "Drag the slider to fit the puzzle" in page_source:
-            print("Warning: TikTok requested bot check - can't gather results")
-            continue
-
         # extract user info
         users_soup = soup.find_all("a", {"data-e2e": "search-user-info-container"})
         print(f"Found {len(users_soup)} results for {search_string}")
@@ -85,33 +55,11 @@ def scrape_users(driver, search_strings):
 
 
 def scrape_video(driver, search_strings):
-    #TODO: Refactor repeated code from both functions
     videos = []
     for search_string in search_strings:
-        # print(f"Searching for: {search_string}, may take a few seconds...")
-        # request page from tiktok
         search_url = f"{BASE_URL}/search?q={search_string}"
-        print(f"Scraping from: {search_url}")
-        driver.get(search_url)
-
-        WebDriverWait(driver, 10).until(
-    EC.presence_of_element_located((By.ID, "app"))
-)
-
-        if "Log in" in driver.page_source:
-            driver = request_user_login(driver)
-
-        # scroll page to account for pagination and get more results
-        for _ in range(10):
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            sleep(1)
-        # pull page HTML
-        page_source = driver.page_source
+        driver, page_source = get_page_source(driver, search_url)
         soup = BeautifulSoup(page_source, 'html.parser')
-
-        if "Drag the slider to fit the puzzle" in page_source:
-            print("Warning: TikTok requested bot check - can't gather results")
-            continue
 
         # extract user info
         videos_soup = soup.find_all("div", {"data-e2e": "search-card-desc"})
@@ -143,14 +91,6 @@ def scrape_video(driver, search_strings):
     videos_df = videos_df.set_index("Keyword")
     videos_df = videos_df.sort_values(["Keyword", "Likes"], ascending=False)
     return videos_df
-
-def request_user_login(driver):
-    print("please login")
-    WebDriverWait(driver, 60).until(
-    EC.presence_of_element_located((By.CSS_SELECTOR, '[data-e2e="profile-icon"]'))
-)
-    driver.minimize_window()
-    return driver
 
 
 if __name__ == "__main__":
