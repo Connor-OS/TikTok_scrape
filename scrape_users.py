@@ -1,11 +1,14 @@
 import sys
+import os
+
 from selenium import webdriver
-from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup
 import pandas as pd
-import os
+
 from utils import get_page_source, CHROME_PROFILE, BASE_URL
+from scrape_video import scrape_video
 
 
 def scrape_users(driver, search_strings):
@@ -54,42 +57,21 @@ def scrape_users(driver, search_strings):
     return users_df
 
 
-def scrape_video(driver, search_strings):
-    videos = []
+def scrape_videos(driver, search_strings):
+    users = []
     for search_string in search_strings:
-        search_url = f"{BASE_URL}/search?q={search_string}"
-        driver, page_source = get_page_source(driver, search_url)
+        print(f"Searching for: {search_string}, may take a few seconds...")
+        search_url = f"{BASE_URL}/search/user?q={search_string}"
+        driver, page_source = get_page_source(driver, search_url,1)
         soup = BeautifulSoup(page_source, 'html.parser')
-
         # extract user info
-        videos_soup = soup.find_all("div", {"data-e2e": "search-card-desc"})
-        videos_links = soup.find_all("div", {"data-e2e": "search_top-item"})
-        print(f"Found {len(videos_soup)} results for {search_string}")
-        for v, l in zip(videos_soup, videos_links):
-            video = dict()
-            # search term and username
-            video["Keyword"] = search_string
-            video["Username"] = v.find("a", {"data-e2e": "search-card-user-link"})['href'].strip("/@")
-            # like count
-            if likes := v.find("div", {"data-e2e": "search-card-like-container"}):
-                pass
-            else:
-                continue
-            likes = likes.get_text()
-            likes = likes.split()[0]
-            likes = eval(likes.replace('K', '*1e3').replace('M', '*1e6'))
-            video["Likes"] = int(likes)
-            # link
-            video["URL"] = l.find("a")["href"]
-            # description
-            if description := v.find("p", {"data-e2e": "search-card-video-caption"}):
-                video["Description"] = description.get_text()
+        users_soup = soup.find_all("a", {"data-e2e": "search-user-info-container"})
+        for u in users_soup:
+            users.append(u['href'].strip("/@"))
 
-            videos.append(video)
-
-    videos_df = pd.DataFrame(videos)
-    videos_df = videos_df.set_index("Keyword")
-    videos_df = videos_df.sort_values(["Keyword", "Likes"], ascending=False)
+    videos_df = scrape_video(driver, users[:10], 1)
+    videos_df = videos_df.sort_values("Views", ascending=False)
+    videos_df = videos_df.set_index("URL")
     return videos_df
 
 
@@ -111,7 +93,7 @@ if __name__ == "__main__":
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     if sys.argv[1] == "-v":
-        data = scrape_video(driver, sys.argv[2:])
+        data = scrape_videos(driver, sys.argv[2:])
     else:
         data = scrape_users(driver, sys.argv[1:])
 

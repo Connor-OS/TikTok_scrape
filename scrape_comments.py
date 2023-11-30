@@ -1,10 +1,12 @@
 import sys
+import os
+
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
-import os
+
 from utils import get_page_source, CHROME_PROFILE, BASE_URL
 
 

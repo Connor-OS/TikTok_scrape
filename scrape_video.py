@@ -1,18 +1,20 @@
 import sys
+import os
+
 from selenium import webdriver
-from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup
 import pandas as pd
-import os
+
 from utils import get_page_source, CHROME_PROFILE, BASE_URL
 
 
-def scrape_video(driver, search_strings):
+def scrape_video(driver, search_strings, scrolls=10):
     videos = []
     for search_string in search_strings:
         search_url = f"{BASE_URL}/@{search_string}"
-        driver, page_source = get_page_source(driver, search_url)
+        driver, page_source = get_page_source(driver, search_url, scrolls)
         soup = BeautifulSoup(page_source, 'html.parser')
 
         # extract user info
